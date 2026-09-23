@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2027 中歐冬季 12 日｜布拉格來回・捷奧德版</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f1ea; --paper:#fff; --ink:#20242a; --muted:#6d737c; --line:#e5e0d7;
+  --rust:#8f5d3c; --blue:#355c7d; --green:#58775d; --gold:#a7782d;
+  --shadow:0 14px 40px rgba(34,37,41,.09); --r:22px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.65}
+.hero{max-width:1320px;margin:auto;padding:42px 22px 24px}
+.kicker{font-size:.84rem;letter-spacing:.12em;color:var(--rust);font-weight:800;text-transform:uppercase}
+h1{font-size:clamp(2rem,4.5vw,4.5rem);line-height:1.02;margin:.35rem 0 .8rem;max-width:1000px}
+.hero p{color:var(--muted);font-size:1.03rem;max-width:980px;margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+.stat{background:rgba(255,255,255,.86);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:16px}
+.stat b{display:block;font-size:1.05rem;margin-top:3px}.stat span{font-size:.84rem;color:var(--muted)}
+.wrap{max-width:1320px;margin:auto;padding:0 22px 50px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:22px}
+.panel-h{padding:20px 22px 13px}.panel-h h2{margin:0 0 5px;font-size:1.45rem}.panel-h p{margin:0;color:var(--muted)}
+#map{height:560px}
+.map-legend{display:flex;flex-wrap:wrap;gap:10px;padding:0 22px 18px;color:var(--muted);font-size:.86rem}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px}
+.pass-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 22px 22px}
+.pass-card{border:1px solid var(--line);border-radius:18px;padding:18px;background:#faf9f6}
+.pass-card.reco{border-color:#c9b07c;background:#fffaf0}
+.pass-card h3{margin:0 0 8px;font-size:1.13rem}
+.pass-card .big{font-size:1.8rem;font-weight:900;color:var(--rust)}
+.pass-card ul{padding-left:1.1rem;margin:.7rem 0 0}.pass-card li{margin:.28rem 0}
+.notice{padding:14px 18px;border-left:5px solid var(--gold);background:#fff8e9;border-radius:14px;margin:0 0 22px}
+.days{display:grid;gap:24px}
+.day{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.day-top{display:grid;grid-template-columns:155px 1fr;align-items:stretch;border-bottom:1px solid var(--line)}
+.date{background:var(--ink);color:white;padding:20px;display:flex;flex-direction:column;justify-content:center}
+.date .d{font-size:1.55rem;font-weight:900}.date .dow{opacity:.75;font-size:.9rem}
+.day-title{padding:18px 22px}.day-title h2{margin:0 0 3px;font-size:1.45rem}.day-title p{margin:0;color:var(--muted)}
+.stay{margin:18px 22px 0;border:1px dashed #b9b4ab;background:#faf9f6;border-radius:14px;padding:12px 14px}
+.stay b{color:var(--blue)}
+.timeline{padding:18px 22px 22px;display:grid;gap:14px}
+.stop{display:grid;grid-template-columns:260px 1fr;gap:16px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}
+.photo{position:relative;min-height:190px;background:linear-gradient(135deg,#526575,#8f5d3c);overflow:hidden}
+.photo img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;display:block}
+.photo .photo-status{position:absolute;left:12px;bottom:10px;right:12px;color:white;font-size:.76rem;text-shadow:0 1px 3px rgba(0,0,0,.8);z-index:2}
+.photo:after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.58));z-index:1;pointer-events:none}
+.stop-body{padding:15px 17px 15px 0}
+.stop-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.stop h3{margin:0;font-size:1.1rem}.time{font-weight:800;color:var(--blue);white-space:nowrap}
+.tags{margin:8px 0 6px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.76rem;padding:3px 8px;border-radius:999px;border:1px solid #d8d3cb;background:#f7f5f1}
+.tag.in{background:#edf8f0;border-color:#c9e5d0;color:#315f3b}
+.tag.out{background:#f2f5f8;border-color:#d8e0e7;color:#38556d}
+.tag.pay{background:#fff6e7;border-color:#f0d6a5;color:#79551c}
+.rows{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:9px}
+.rowbox{background:#faf9f6;border-radius:12px;padding:9px 10px;font-size:.88rem}
+.rowbox b{display:block;color:#4b5563;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.day-note{margin:0 22px 22px;padding:11px 13px;border-radius:12px;background:#f6f8fb;color:#4b5563;font-size:.9rem}
+.sources{padding:0 22px 22px}
+.sources details{border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:.86rem}
+.sources a{color:var(--blue)}
+footer{max-width:1320px;margin:auto;padding:0 22px 45px;color:var(--muted);font-size:.88rem}
+@media(max-width:900px){
+ .stats,.pass-grid{grid-template-columns:1fr 1fr}
+ #map{height:430px}.day-top{grid-template-columns:120px 1fr}
+ .stop{grid-template-columns:1fr}.photo{min-height:230px}.stop-body{padding:15px 17px}
+ .rows{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+ .stats,.pass-grid{grid-template-columns:1fr}
+ .day-top{grid-template-columns:1fr}.date{padding:12px 18px;flex-direction:row;gap:8px;justify-content:flex-start;align-items:center}
+ .date .d{font-size:1.1rem}.rows{grid-template-columns:1fr}
+ #map{height:360px}
+}
+
+/* ===== 交通票券＋費用試算區 ===== */
+.transit-panel, .cost-panel{
+  background:var(--paper, var(--card, #fff));
+  border:1px solid var(--line, #e5e7eb);
+  border-radius:var(--r, var(--radius, 18px));
+  box-shadow:var(--shadow, 0 12px 28px rgba(0,0,0,.08));
+  overflow:hidden;
+  margin:22px 0;
+}
+.transit-head,.cost-head{padding:20px 22px 12px}
+.transit-head h2,.cost-head h2{margin:0 0 6px;font-size:1.42rem}
+.transit-head p,.cost-head p{margin:0;color:var(--muted,#6b7280)}
+.transit-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0 22px 22px;
+}
+.transit-country{
+  border:1px solid var(--line,#e5e7eb);border-radius:16px;padding:16px;background:#faf9f6;
+}
+.transit-country h3{margin:0 0 8px;font-size:1.08rem}
+.transit-country ul{margin:0;padding-left:1.15rem}
+.transit-country li{margin:.42rem 0}
+.ticket-rec{
+  display:inline-block;margin:4px 4px 0 0;padding:3px 8px;border-radius:999px;
+  background:#eef5ff;border:1px solid #cfe0f5;color:#315a7a;font-size:.78rem;font-weight:700
+}
+.ticket-free{background:#edf8f0;border-color:#cce6d1;color:#35633e}
+.ticket-warn{background:#fff6e7;border-color:#edd49e;color:#76541d}
+.cost-wrap{padding:0 22px 22px;overflow-x:auto}
+.cost-table{width:100%;border-collapse:collapse;min-width:980px}
+.cost-table th,.cost-table td{border-bottom:1px solid var(--line,#e5e7eb);padding:9px 8px;text-align:left;vertical-align:middle}
+.cost-table th{background:#faf9f6;font-size:.83rem;color:#4b5563}
+.cost-table input[type="number"],.cost-table select{
+  width:100%;min-width:80px;padding:7px 8px;border:1px solid #cfd3d8;border-radius:8px;background:white;
+}
+.cost-table input[type="text"]{
+  width:100%;padding:7px 8px;border:1px solid #cfd3d8;border-radius:8px;background:white;
+}
+.cost-table .include-cell{text-align:center}
+.cost-table .money{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.cost-summary{
+  display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-top:16px;
+}
+.cost-total{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:12px;background:#faf9f6}
+.cost-total span{display:block;color:var(--muted,#6b7280);font-size:.8rem}
+.cost-total b{font-size:1.12rem}
+.fx-box{
+  margin-top:14px;padding:14px;border-radius:14px;background:#f5f8fb;border:1px solid #dce4eb;
+}
+.fx-grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin-top:10px}
+.fx-grid label{font-size:.78rem;color:#59616c}
+.fx-grid input{width:100%;margin-top:4px;padding:7px 8px;border:1px solid #cfd3d8;border-radius:8px}
+.twd-total{margin-top:12px;font-size:1.2rem;font-weight:900;color:var(--rust,#8b5e34)}
+.cost-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.cost-actions button{
+  border:1px solid #cfd3d8;border-radius:9px;padding:7px 11px;background:white;cursor:pointer
+}
+.cost-note{font-size:.84rem;color:var(--muted,#6b7280);margin-top:8px}
+@media(max-width:760px){
+  .transit-grid{grid-template-columns:1fr}
+  .cost-summary,.fx-grid{grid-template-columns:1fr 1fr}
+}
+
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="kicker">CENTRAL EUROPE · WINTER 2027</div>
+  <h1>布拉格來回｜12 天 11 晚中歐冬季自由行・捷奧德版</h1>
+  <p>2027/1/12–1/23。1/12 08:15 抵達 PRG，1/23 10:25 自 PRG 離境</p>
+  <div class="stats">
+    <div class="stat"><span>進出機場</span><b>PRG ⇄ TPE</b></div>
+    <div class="stat"><span>主要住宿基地</span><b>4 個</b></div>
+    <div class="stat"><span>跨國</span><b>捷克・奧地利・德國</b></div>
+    <div class="stat"><span>長途交通策略</span><b>巴士＋VORTEILScard Jugend＋分段購票</b></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <div class="panel-h">
+      <h2>互動式地圖｜所有景點位置</h2>
+      <p>可縮放、拖曳、點擊標記查看景點名稱、日期與是否入內。黑色虛線為住宿城市主線；一日遊以支線呈現。</p>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend">
+      <span><i class="dot" style="background:#355c7d"></i>捷克</span>
+      <span><i class="dot" style="background:#a7782d"></i>奧地利</span>
+      <span><i class="dot" style="background:#58775d"></i>德國</span>
+    </div>
+  </section>
+
+
+<section class="panel">
+    <div class="panel-h">
+      <h2>PRG 來回版｜青年交通票券策略</h2>
+      <p>本版不再預設購買 長途票。布拉格用學生月票；Prague → Český Krumlov 搭直達巴士；奧地利境內使用 VORTEILScard Jugend，逐段比較「50% Standard Ticket」與 Sparschiene。</p>
+    </div>
+    <div class="pass-grid">
+      <div class="pass-card reco">
+        <h3>目前優先方案</h3>
+        <div class="big">分段買票</div>
+        <ul>
+          <li>布拉格：PID 學生月票 130 CZK／人（18–26 歲全日制學生；需有效 ISIC／資格驗證）</li>
+          <li>1/14 Prague → Český Krumlov：直達巴士，班次與下車位置通常比火車方便</li>
+          <li>奧地利：VORTEILScard Jugend €21／人／年（under 26）</li>
+          <li>Hallstatt、Salzburg → Vienna：每段比較 Vorteilscard Standard Ticket 與 Sparschiene</li>
+          <li>Vienna → Prague：另外比較 ÖBB／ČD 跨境提前票，不直接假設整段享 50% 優惠</li>
+        </ul>
+      </div>
+      <div class="pass-card">
+        <h3>ÖBB 買票原則</h3>
+        <div class="big">便宜 vs. 彈性</div>
+        <ul>
+          <li><strong>Vorteilscard + Standard Ticket：</strong>Standard Ticket 享 50% 折扣，通常不綁指定車次；R／REX／IC／RJ／RJX 皆可依票面路線搭乘。</li>
+          <li><strong>Sparschiene：</strong>若當班有更低促銷價，可以直接選 Sparschiene；不會再疊 Vorteilscard 50%。</li>
+          <li>若 Ticketshop／App 同時顯示 Vorteilscard Standard Ticket 與 Sparschiene，可直接比較；若線上未顯示 Standard Ticket，不要假設一定有切換選項，可改至 ÖBB 售票機／櫃台確認。</li>
+          <li>Salzburg → Hallstatt 中途換車不必拆票；在 ÖBB 直接買 Salzburg Hbf → Hallstatt Bahnhof 全程票即可。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+
+  
+<section class="transit-panel" id="local-transit">
+  <div class="transit-head">
+    <h2>各國城市交通票券｜PRG 來回・捷奧德版</h2>
+    <p>本版改採「<strong>布拉格學生月票＋巴士＋ÖBB VORTEILScard Jugend＋長途票分段購買</strong>」。不預設 長途票；2027 正式班表與促銷票開賣後，再逐段比較 Standard Ticket、Sparschiene 與跨境提前票。</p>
+  </div>
+  <div class="transit-grid">
+    
+<div class="transit-country">
+      <h3>🇨🇿 捷克｜布拉格＋庫倫洛夫</h3>
+      <ul>
+        <li><strong>布拉格全程：</strong>改用 <span class="ticket-rec">PID 學生月票 130 CZK／人</span>。適用 18–26 歲全日制學生；外國學生需以有效 ISIC／規定方式完成資格驗證。</li>
+        <li>月票涵蓋 Prague 一般 Metro、Tram、Bus、Trolleybus，因此 1/12 抵達、1/20 採買日、1/21–1/22 市內活動及 1/23 搭一般 PID 前往 PRG 都不用再買 72h／24h／90 分鐘票；<strong>Airport Express（AE）除外</strong>。</li>
+        <li><strong>1/14 Prague → Český Krumlov：</strong>改搭直達巴士（FlixBus／RegioJet 等依 2027 班表比較），不使用鐵路 Pass。</li>
+        <li><strong>契斯基庫倫洛夫：</strong>不買市區 Pass；老城與城堡區步行即可。巴士站通常比火車站更接近老城。</li>
+      </ul>
+    </div>
+
+    
+<div class="transit-country">
+      <h3>🇦🇹 奧地利｜薩爾茲堡＋哈爾施塔特</h3>
+      <ul>
+        <li><strong>薩爾茲堡住宿期間：</strong>使用住宿提供的 <span class="ticket-rec ticket-free">Guest Mobility Ticket｜€0</span>，處理 Salzburg 市區與 Salzburg Land 內適用的區域交通。</li>
+        <li><strong>VORTEILScard Jugend：</strong><span class="ticket-rec">€21／人／年</span>，under 26；購買 ÖBB Standard Ticket 時享 50% 折扣。</li>
+        <li><strong>1/17 Salzburg ⇄ Hallstatt：</strong>在 ÖBB 直接搜尋 Salzburg Hbf → Hallstatt Bahnhof 的全程票；Attnang-Puchheim 中途轉 REX 不必拆成兩張票。</li>
+        <li>訂票時比較 <strong>Vorteilscard Standard Ticket</strong> 與 <strong>Sparschiene</strong>：若 Sparschiene 明顯更便宜就選促銷票；若價差小、想保留換班彈性則選 Standard Ticket。</li>
+        <li>Hallstatt Bahnhof ↔ Hallstatt Markt 渡船仍需另外購票；Salzburg Card 不買。</li>
+      </ul>
+    </div>
+
+    <div class="transit-country">
+      <h3>🇩🇪 德國｜國王湖＋貝希特斯加登</h3>
+      <ul>
+        <li>不需買德國城市 Pass；建議買 <span class="ticket-rec">RVO Tagesticket｜€14.10／人（2026）</span>，用於 840 與當日 RVO 區域公車。</li>
+        <li><strong>840：</strong>Salzburg 端已有 Guest Mobility Ticket；持 RVO 日票後，當天國王湖／Berchtesgaden 的主要 RVO 公車移動不必再逐段補票。</li>
+        <li><strong>國王湖遊船：</strong>St. Bartholomä 冬季往返依當年度官方票價。</li>
+      </ul>
+    </div>
+    <div class="transit-country">
+      <h3>🇦🇹 奧地利｜維也納</h3>
+      <ul>
+        <li><strong>1/18–1/20：</strong>建議每人買 <span class="ticket-rec">2 張 24 Stunden Digital WIEN</span>，連續啟用約可覆蓋 1/18 抵達後至 1/20 清晨離開前的 U-Bahn、Tram、Bus。</li>
+        <li>第一張可在 1/18 抵達 Wien Hbf 後第一次搭市區交通時啟用，第二張於第一張到期前後接續。</li>
+        <li>VORTEILScard 與長途 ÖBB 車票不取代 Wiener Linien 市區交通票；Vienna 的 U-Bahn／Tram／Bus 仍依本段市區票處理。</li>
+      </ul>
+    </div>
+    
+<div class="transit-country">
+      <h3>🚆 長途鐵路｜改為逐段購票</h3>
+      <ul>
+        <li><strong>1/17 Salzburg ⇄ Hallstatt：</strong>VORTEILScard Standard Ticket 50% vs. Sparschiene，擇優。</li>
+        <li><strong>1/18 Salzburg → Vienna：</strong>同樣比較 Vorteilscard Standard Ticket 與 Sparschiene；若價差小可優先買較彈性的 Standard Ticket。</li>
+        <li><strong>1/20 Vienna → Prague：</strong>比較 ÖBB Sparschiene／其他跨境票與 ČD 提前票；不要把 Vorteilscard 的奧地利國內 50% 直接套到整段跨境票。</li>
+        <li><span class="ticket-rec ticket-warn">Standard Ticket 與 Sparschiene 是不同產品；是否能在線上同時選到兩種票，以 Ticketshop／App 實際顯示為準。</span></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<div class="notice"><b>冬季重要：</b>霍恩薩爾茲堡要塞纜車於 2027/1/11–3/14 維修停駛；要塞本體、博物館與步行上山路線仍開放。因此 1/15 改成步行上山，不排纜車。</div>
+
+  <section class="days" id="days"></section>
+
+
+</main>
+
+<footer>
+  票價以 2026 年已公布之官方價格／當前價格作規劃基準；2027 年 1 月出發前應再核對一次。景點照片在線上開啟時由 Wikipedia/Wikimedia Commons 自動載入，若個別頁面抓取失敗，會顯示備援圖。
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
+<script>
+const days = [
+{
+ date:"1/12", dow:"二", place:"捷克・布拉格｜抵達日", stay:"Karlín／Žižkov／Vinohrady 外圍", note:"08:15 抵達 PRG。先在機場處理 ISIC／PID 學生資格認證，再進市區到民宿寄放行李；下午只排伏爾塔瓦河遊船與查理大橋，避免抵達日塞太滿。",
+ stops:[
+  ["08:15–09:45","PRG 抵達＋ISIC／PID 學生資格認證","—","PID 學生月票 130 CZK／人","機場辦理＋PID","Vaclav Havel Airport Prague",50.1008,14.2632,"CZ","抵達後先完成入境、領行李，再處理 ISIC／PID 學生資格認證與月票；實際辦理櫃位與可受理方式出發前再確認。"],
+  ["09:45–11:15","PRG 機場 → 民宿寄放行李","—","含 PID 學生月票","Metro／Trolleybus 59 等大眾運輸","Prague city centre",50.0755,14.4378,"CZ","先到住宿放行李，不拖行李跑景點；實際時間依住宿位置調整。"],
+  ["12:30–13:20","伏爾塔瓦河白天遊船（Vltava Cruise）","要","成人約 €18 起；線上常有折扣","步行至碼頭","Vltava cruise Prague",50.0922,14.4182,"CZ","抵達日先安排坐著休息的活動，也利用冬季白天看河岸景色。"],
+  ["14:00–15:30","查理大橋（Charles Bridge）","否","免費","步行","Charles Bridge Prague",50.0865,14.4114,"CZ","遊船後步行前往，把剩餘自然光留給查理大橋與城堡方向。"]
+ ]
+},
+{
+ date:"1/13", dow:"三", place:"捷克・布拉格", stay:"Karlín／Žižkov／Vinohrady 外圍", note:"完整 Prague 城堡日。上午搭 22 號電車上城堡區；伏爾塔瓦河遊船已移到 1/12，下午保留給城堡區延伸、咖啡或休息。",
+ stops:[
+  ["08:30–09:00","布拉格路面電車（Prague Tram）","搭乘","含市區交通票","22 號路面電車","Prague tram",50.0930,14.4040,"CZ","把 22 號電車本身當成景觀交通體驗。"],
+  ["09:00–12:30","布拉格城堡（Prague Castle）","要","route B 學生至 26 歲 300 CZK 線上買：GetYourGuide或Tiqets","步行","Prague Castle",50.0909,14.4005,"CZ","從正門（Hradčanské náměstí）進入，先看衛兵交接（12:00），然後直衝聖維特大教堂。早上去光線好，拍照漂亮。接著去舊皇宮，再看聖喬治大殿，最後走黃金巷。"],
+  ["09:30–10:30","聖維特大教堂（St. Vitus Cathedral）","要","含布拉格城堡主路線票","步行","St Vitus Cathedral Prague",50.0909,14.4010,"CZ","你指定必去；冬季優先上午。"]
+ ]
+},
+{
+ date:"1/14", dow:"四", place:"捷克・契斯基庫倫洛夫", stay:"舊城外圍／城堡周邊／巴士站步行方便區域", note:"Prague → Český Krumlov 改搭直達巴士；2027 班表開放後比較 FlixBus／RegioJet 的價格與時段。",
+ stops:[
+  ["08:30–11:30","布拉格 → 契斯基庫倫洛夫","—","另購直達巴士票","FlixBus／RegioJet 等","Cesky Krumlov",48.8120,14.3180,"CZ","改搭巴士，不買鐵路 Pass；巴士站通常比火車站更接近老城，實際班次以 2027 開賣後為準。"],
+  ["12:30–14:00","庫倫洛夫城堡區（Český Krumlov Castle）","外觀／庭院","外部免費；冬季室內路線依公告","步行","Cesky Krumlov Castle",48.8127,14.3152,"CZ","1 月以城堡區與戶外景觀為主。"],
+  ["14:00–14:30","斗篷橋（Cloak Bridge）","否｜可略過","免費","步行","Cloak Bridge Cesky Krumlov",48.8124,14.3141,"CZ","主要是經典視角；時間不足可直接往老城。"],
+  ["14:40–16:00","伏爾塔瓦河 S 型河灣＋老城","否","免費","步行","Cesky Krumlov old town",48.8108,14.3157,"CZ","把最後自然光留給河灣與屋頂景觀。"]
+ ]
+},
+{
+ date:"1/15", dow:"五", place:"奧地利・薩爾茲堡", stay:"Salzburg Hbf／Elisabeth-Vorstadt；古堡住宿可選 Mönchsberg 一帶", note:"Krumlov 早上出發至 Salzburg。抵達後集中完成老城與要塞；FestungsBahn 維修，因此步行上山。",
+ stops:[
+  ["08:30–12:00","庫倫洛夫 → 薩爾茲堡","—","另購接駁／巴士","接駁／巴士","Salzburg old town",47.7994,13.0432,"AT","跨境段仍以接駁／巴士較直接。"],
+  ["13:00–14:00","薩爾茲堡老城（Salzburg Old Town）","否","免費","步行","Salzburg Old Town",47.7994,13.0432,"AT","抵達後先用白天看老城立面。"],
+  ["14:00–14:40","蓋特萊德街（Getreidegasse）","否","免費","步行","Getreidegasse",47.8001,13.0420,"AT","不去 Mozart Birthplace。"],
+  ["14:50–17:00","霍恩薩爾茲堡要塞（Hohensalzburg Fortress）","要","步行版 Basic Ticket 目前約 €12；2027 現場價再確認","步行上山約 15 分鐘","Hohensalzburg Fortress",47.7948,13.0476,"AT","2027/1/11–3/14 纜車維修停駛。"],
+  ["17:10–17:40","薩爾察赫河岸（Salzach River）","否","免費","步行","Salzach River Salzburg",47.8014,13.0442,"AT","天黑後拍城市燈光。"]
+ ]
+},
+{
+ date:"1/16", dow:"六", place:"德國・國王湖＋貝希特斯加登", stay:"同前一晚｜薩爾茲堡", note:"國王湖上午利用自然光，下午接 Berchtesgaden Salt Mine。交通採 RVO Tagesticket＋840／RVO 公車。",
+ stops:[
+  ["08:00–09:20","薩爾茲堡 → 國王湖","—","RVO Tagesticket（2026 €14.10／人；2027 再確認）","Regionalbus 840","Konigssee",47.5931,12.9888,"DE","遊客中心免費公共廁所上廁所。"],
+  ["09:30–12:00","國王湖遊船（Königssee）","要","St. Bartholomä 往返依 2027 官方票價","遊船","Konigssee winter",47.5931,12.9888,"DE","冬季核心為湖面、山景與 St. Bartholomä，不把 Salet／Obersee 當必去。"],
+  ["10:20–11:20","聖巴多羅買（St. Bartholomä）","否","免費","船＋步行","St Bartholoma Konigssee",47.5590,12.9665,"DE","主要看紅頂教堂與湖岸景色。"],
+  ["13:30–15:20","貝希特斯加登鹽礦（Berchtesgaden Salt Mine）","要","學生 17–25 歲 €23.50；成人 €26.50（現行基準）","巴士","Berchtesgaden Salt Mine",47.6192,13.0039,"DE","約 1.5–2 小時，含換礦工服與地下導覽。"]
+ ]
+},
+{
+ date:"1/17", dow:"日", place:"奧地利・哈爾施塔特／薩爾茨卡默古特", stay:"同前一晚｜薩爾茲堡", note:"Salzburg ⇄ Hallstatt 改為單買 ÖBB 車票：套用 VORTEILScard Jugend 後比較 Standard Ticket 與 Sparschiene；跨湖渡船另購。",
+ stops:[
+  ["07:45–10:15","薩爾茲堡 → 哈爾施塔特","—","VORTEILScard Standard Ticket／Sparschiene＋跨湖船","ÖBB 火車＋渡船","Hallstatt train ferry",47.5670,13.6600,"AT","直接買 Salzburg Hbf → Hallstatt Bahnhof 全程票；Attnang-Puchheim 轉 REX 不用拆票。若 Sparschiene 更便宜可選促銷票；若價差小則 Standard Ticket 彈性較高。"],
+  ["10:20–11:00","哈爾施塔特明信片觀景點（Postcard Viewpoint）","否","免費","步行","Hallstatt postcard viewpoint",47.5622,13.6490,"AT","第一優先拍經典教堂＋湖＋山。"],
+  ["11:00–12:30","哈爾施塔特湖（Hallstätter See）湖畔","否","免費","步行","Hallstatter See Hallstatt",47.5628,13.6497,"AT","完整保留白天湖景。"],
+  ["13:00–13:40","市集廣場（Marktplatz）","否","免費","步行","Hallstatt Market Square",47.5624,13.6494,"AT","古鎮核心。"],
+  ["13:50–15:10","木屋街區／湖畔街景","否","免費","步行","Hallstatt village winter",47.5618,13.6487,"AT","不排 Hallstatt Salt Mine。"]
+ ]
+},
+{
+ date:"1/18", dow:"一", place:"奧地利・薩爾茲堡 → 維也納", stay:"Wien Hbf／Favoriten（U1 沿線）", note:"Salzburg → Vienna 單買 ÖBB 車票；套用 VORTEILScard Jugend 後比較 Standard Ticket 與 Sparschiene。抵達後依指定順序：Hofburg → St. Stephen’s Cathedral → Upper Belvedere。",
+ stops:[
+  ["08:00–10:45","薩爾茲堡 → 維也納","—","VORTEILScard Standard Ticket／Sparschiene","Railjet / RJX","Vienna Hauptbahnhof",48.1850,16.3768,"AT","2027 開賣後比較 Ticketshop／App 實際顯示的票價；若線上未顯示 Vorteilscard Standard Ticket，可到 ÖBB 售票機／櫃台確認。"],
+  ["11:30–12:15","霍夫堡皇宮（Hofburg）","否｜外觀","免費","U-Bahn＋步行","Hofburg Vienna",48.2065,16.3666,"AT","依你的設定只看外觀，先完成市中心西側。"],
+  ["12:25–13:10","聖斯德望主教座堂（St. Stephen’s Cathedral）","否｜外觀","主殿免費","步行","St Stephens Cathedral Vienna",48.2085,16.3730,"AT","維持本附件設定：以外觀為主；由 Hofburg 步行過去順路。"],
+  ["14:10–16:00","上貝爾維第宮（Upper Belvedere）","要","學生 under 26 €19；成人 €23（現行基準）","Tram／步行","Upper Belvedere Vienna",48.1913,16.3809,"AT","最後回到 Wien Hbf 周邊；入內看 Klimt《吻》。"]
+ ]
+},
+{
+ date:"1/19", dow:"二", place:"奧地利・維也納", stay:"同前一晚｜Wien Hbf／Favoriten", note:"上午美泉宮 State Apartments；下午在日落前抵達沃蒂夫教堂（Votivkirche）拍外觀與暮色燈光，再回 Wien Hbf 的 INTERSPAR 採買。",
+ stops:[
+  ["08:30–10:30","美泉宮（Schönbrunn Palace）State Apartments","要","學生 19–25 歲 €23；成人 €30（現行基準）","U4","Schonbrunn Palace",48.1845,16.3122,"AT","只進宮殿，不走花園／Gloriette 主線。"],
+  ["10:30–11:00","美泉宮正面外觀","否","免費","步行","Schonbrunn Palace facade",48.1845,16.3122,"AT","拍完即離開。"],
+  ["11:30–15:15","午餐＋維也納自由時間","彈性","依消費","U-Bahn＋步行","Vienna historic centre",48.2082,16.3738,"AT","不新增博物館；保留午餐、咖啡與移動時間。"],
+  ["15:45–16:55","沃蒂夫教堂（Votivkirche）外觀＋暮色燈光","否｜外觀","免費","U-Bahn／Tram＋步行","Votivkirche Vienna",48.2157,16.3593,"AT","日落前先到教堂外拍建築，再等暮色後拍外部燈光效果；2027 實際點燈狀況出發前再確認。"],
+  ["17:20–18:30","INTERSPAR Wien Hauptbahnhof 奧地利超市","要｜採買","購物預算自訂","U-Bahn／Wien Hbf 站內","INTERSPAR Wien Hauptbahnhof",48.1850,16.3768,"AT","奧地利食品、零食與伴手禮集中在今晚買完，隔天可直接搭早班車回 Prague。"]
+ ]
+},
+{
+ date:"1/20", dow:"三", place:"奧地利・維也納 → 捷克・布拉格｜採買日", stay:"布拉格中央車站／新城區", note:"改搭早班跨境列車回 Prague；抵達後先寄放／放下行李，再依序 Fashion Arena → Globus Štěrboholy。晚餐不安排在今天。",
+ stops:[
+  ["06:30–10:40","維也納 → 布拉格","—","ÖBB／ČD 跨境提前票","早班直達 Railjet / EC","Prague Main Station",50.0831,14.4352,"CZ","2027 正式班表公布後鎖定早班直達；時間先抓約 4 小時。抵達 Prague 後先寄放／放下行李。"],
+  ["11:30–14:30","Fashion Arena Prague Outlet","要｜購物","購物預算自訂","Metro A＋接駁／公車","Fashion Arena Prague Outlet",50.0762,14.5394,"CZ","集中採買約 3 小時；2027 營業時間出發前再確認。"],
+  ["14:45–16:15","Globus Hypermarket Štěrboholy","要｜採買","購物預算自訂","步行／短程公車","Globus Hypermarket Sterboholy",50.0726,14.5422,"CZ","與 Fashion Arena 同區，接著買捷克零食、飲料、伴手禮與日用品。"],
+  ["16:15–18:00","回住宿放戰利品＋休息","—","免費","PID","Prague Main Station",50.0831,14.4352,"CZ","先把購物袋放回住宿，晚餐不要帶大量戰利品。"],
+ ]
+},
+{
+ date:"1/21", dow:"四", place:"捷克・布拉格｜老城＋斯特拉霍夫修道院＋地窖晚餐", stay:"同前一晚｜布拉格中央車站／新城區", note:"上午安排老城廣場與布拉格天文鐘；下午前往斯特拉霍夫修道院圖書館入場，晚餐直接接 Na Pekle。這樣把 1/12 抵達日的老城景點移到更從容的一天。",
+ stops:[
+  ["09:30–10:15","老城廣場（Old Town Square）","否","免費","PID＋步行","Old Town Square Prague",50.0870,14.4208,"CZ","把原本 1/12 的老城核心移到今天，早上人潮相對較少，也有完整時間拍照。"],
+  ["10:15–10:45","布拉格天文鐘（Prague Astronomical Clock）","否","免費","步行","Prague Astronomical Clock",50.0870,14.4207,"CZ","安排接近整點觀賞；與老城廣場同區，不需額外移動。"],
+  ["11:00–12:30","老城自由活動／午餐","彈性","依消費","步行","Prague Old Town",50.0874,14.4212,"CZ","上午老城行程結束後用餐，再前往 Strahov。"],
+  ["14:00–15:30","斯特拉霍夫修道院圖書館（Strahov Monastery Library）","要","需購票；2027 票價出發前確認","Tram＋步行","Strahov Monastery Library Prague",50.0862,14.3893,"CZ","正式入場；預留約 1–1.5 小時參觀神學廳、哲學廳等圖書館空間。"],
+  ["15:30–17:30","斯特拉霍夫修道院周邊／城堡區散步","否","免費","步行","Strahov Monastery Prague",50.0863,14.3890,"CZ","圖書館結束後留在同區，可視天候補拍布拉格高處景色。"],
+  ["18:00–20:00","Na Pekle 修道院地窖餐廳","要｜晚餐","餐費自訂","步行","Restaurant Na Pekle Prague",50.0854,14.3906,"CZ","與斯特拉霍夫修道院同區，直接步行前往；建議事先訂位。"]
+ ]
+},
+{
+ date:"1/22", dow:"五", place:"捷克・布拉格｜最後自由日＋返程整理", stay:"同前一晚｜布拉格中央車站／新城區", note:"大型採買已於 1/20 完成；斯特拉霍夫圖書館與 Na Pekle 已安排於 1/21。本日留給 Prague 最後自由活動、補拍、咖啡與打包，避免隔天 10:25 航班前太疲累。",
+ stops:[
+  ["09:30–13:00","布拉格自由活動／補拍","彈性","依消費","PID＋步行","Prague Old Town",50.0870,14.4208,"CZ","可回訪前面因天候沒拍好的地點，或單純在市中心散步；不新增跨城行程。"],
+  ["14:00–17:00","咖啡／最後零星採買","彈性","依消費","PID＋步行","Prague New Town",50.0813,14.4250,"CZ","只做輕量活動，不再安排大型 Outlet。"],
+  ["17:00–20:00","回住宿整理行李＋提早休息","—","免費","步行／PID","Prague Main Station",50.0831,14.4352,"CZ","隔天約 06:15–06:30 離開市區前往 PRG。"]
+ ]
+},
+{
+ date:"1/23", dow:"六", place:"布拉格 → PRG → 回程", stay:"—", note:"10:25 起飛。建議約 07:25 前抵達機場，因此市中心約 06:15–06:30 出發；不再安排任何景點。",
+ stops:[
+  ["06:15–07:20","布拉格市區 → PRG 機場","—","PID 學生月票","避開 AE 機場快線","Vaclav Havel Airport Prague",50.1008,14.2632,"CZ","學生月票仍在效期內，可搭一般 PID 前往機場；AE Airport Express 另計。以國際線提前約 3 小時到機場抓緩衝。"],
+  ["10:25","PRG 起飛","—","—","航班","Vaclav Havel Airport Prague",50.1008,14.2632,"CZ","布拉格時間 10:25 離境。"]
+ ]
+}
+]
+
+const color={CZ:"#355c7d",AT:"#a7782d",DE:"#58775d"};
+const countryName={CZ:"捷克",AT:"奧地利",DE:"德國"};
+
+function photoFallback(country){
+  if(country==="CZ") return "assets/prague_clock.png";
+  return "assets/krumlov.png";
+}
+async function loadWikiPhoto(img, query){
+  const fallback=img.dataset.fallback;
+  try{
+    const url="https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch="+encodeURIComponent(query)+"&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=1000&format=json&origin=*";
+    const r=await fetch(url);
+    const j=await r.json();
+    const pages=j?.query?.pages;
+    if(pages){
+      const p=Object.values(pages)[0];
+      if(p?.thumbnail?.source){ img.src=p.thumbnail.source; img.dataset.credit="Wikipedia / Wikimedia Commons"; return; }
+    }
+  }catch(e){}
+  img.src=fallback;
+  img.dataset.credit="備援照片";
+}
+function tagClass(s){return s.includes("要")||s.includes("搭乘")?"in":(s.includes("否")||s.includes("外觀")?"out":"");}
+function moneyTag(price){return price==="免費"||price==="—"?"":"pay";}
+
+const daysEl=document.getElementById("days");
+days.forEach((d,di)=>{
+  const article=document.createElement("article"); article.className="day";
+  article.innerHTML=`
+  <div class="day-top"><div class="date"><span class="d">${d.date}</span><span class="dow">星期${d.dow}</span></div>
+  <div class="day-title"><h2>DAY ${di+1}｜${d.place}</h2><p>${d.note}</p></div></div>
+  <div class="stay"><b>預計住宿區域：</b> ${d.stay}<br>住宿連結：＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿</div>
+  <div class="timeline"></div>
+  <div class="day-note">交通與開放時間為規劃版；2027 冬季正式班表／票價公布後，再做最終訂票版。</div>`;
+  const tl=article.querySelector(".timeline");
+  d.stops.forEach((s,si)=>{
+    const [time,name,enter,price,transport,photoq,lat,lng,country,desc]=s;
+    const div=document.createElement("div"); div.className="stop";
+    div.innerHTML=`
+      <div class="photo">
+        <img alt="${name}" data-wiki="${photoq}" data-fallback="${photoFallback(country)}">
+        <div class="photo-status">景點照片 · Wikipedia/Wikimedia Commons</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-head"><h3>${name}</h3><div class="time">${time}</div></div>
+        <div class="tags"><span class="tag ${tagClass(enter)}">入內：${enter}</span><span class="tag ${moneyTag(price)}">${price}</span></div>
+        <div class="rows">
+          <div class="rowbox"><b>交通方式</b>${transport}</div>
+          <div class="rowbox"><b>國家</b>${countryName[country]}</div>
+          <div class="rowbox"><b>安排理由</b>${desc}</div>
+        </div>
+      </div>`;
+    tl.appendChild(div);
+    const img=div.querySelector("img");
+    loadWikiPhoto(img,photoq);
+  });
+  daysEl.appendChild(article);
+});
+
+// Interactive map
+const map = L.map('map', {
+  scrollWheelZoom: true
+}).setView([48.7, 15.3], 6);
+
+L.maplibreGL({
+  style: 'https://tiles.openfreemap.org/styles/liberty'
+}).addTo(map);
+const allStops=[];
+days.forEach((d,di)=>d.stops.forEach(s=>{
+ const lat=s[6], lng=s[7], c=s[8];
+ if(typeof lat==="number"&&typeof lng==="number"){
+   allStops.push([lat,lng]);
+   L.circleMarker([lat,lng],{radius:7,color:color[c],fillColor:color[c],fillOpacity:.95,weight:1.5})
+    .addTo(map).bindPopup(`<b>${s[1]}</b><br>${d.date}｜${d.place}<br>入內：${s[2]}<br>費用：${s[3]}`);
+ }
+}));
+
+// Main overnight route
+const mainRoute=[
+ [50.0755,14.4378], // Prague
+ [48.8120,14.3180], // Krumlov
+ [47.8095,13.0550], // Salzburg
+ [48.2082,16.3738], // Vienna
+ [50.0755,14.4378]  // Prague
+];
+L.polyline(mainRoute,{color:"#20242a",weight:3,opacity:.72,dashArray:"9,8"}).addTo(map);
+// Day trip branches
+L.polyline([[47.8095,13.0550],[47.5931,12.9888],[47.6192,13.0039],[47.8095,13.0550]],{color:"#58775d",weight:2,opacity:.8}).addTo(map);
+L.polyline([[47.8095,13.0550],[47.5622,13.6490],[47.8095,13.0550]],{color:"#a7782d",weight:2,opacity:.8}).addTo(map);
+map.fitBounds(L.latLngBounds(allStops).pad(.08));
+</script>
+
+<script>
+(function(){
+  function formatMoney(curr, val){
+    if(!Number.isFinite(val)) val=0;
+    if(curr==="EUR") return "€"+val.toFixed(2);
+    if(curr==="USD") return "US$"+val.toFixed(2);
+    if(curr==="TWD") return "NT$"+Math.round(val).toLocaleString();
+    if(curr==="CZK") return Math.round(val).toLocaleString()+" CZK";
+    return val.toFixed(2)+" "+curr;
+  }
+  function recalc(){
+    const totals={EUR:0,CZK:0,USD:0,TWD:0};
+    document.querySelectorAll(".cost-row").forEach(row=>{
+      const inc=row.querySelector(".cost-include")?.checked;
+      const curr=row.querySelector(".cost-currency")?.value || "EUR";
+      const unit=parseFloat(row.querySelector(".cost-unit")?.value);
+      const qty=parseFloat(row.querySelector(".cost-qty")?.value);
+      const sub=(Number.isFinite(unit)?unit:0)*(Number.isFinite(qty)?qty:0);
+      const cell=row.querySelector(".cost-subtotal");
+      if(cell) cell.textContent=inc?formatMoney(curr,sub):"未計入";
+      if(inc) totals[curr]=(totals[curr]||0)+sub;
+    });
+    Object.keys(totals).forEach(curr=>{
+      const el=document.querySelector(`[data-total="${curr}"]`);
+      if(el) el.textContent=formatMoney(curr,totals[curr]);
+    });
+    let twd=totals.TWD||0;
+    document.querySelectorAll(".fx-rate").forEach(input=>{
+      const rate=parseFloat(input.value);
+      const curr=input.dataset.currency;
+      if(Number.isFinite(rate)) twd += (totals[curr]||0)*rate;
+    });
+    const grand=document.querySelector(".grand-twd");
+    if(grand) grand.textContent=formatMoney("TWD",twd);
+  }
+  function bind(){
+    document.querySelectorAll(".cost-panel input,.cost-panel select").forEach(el=>{
+      el.addEventListener("input",recalc); el.addEventListener("change",recalc);
+    });
+    document.querySelectorAll(".add-cost-row").forEach(btn=>btn.addEventListener("click",()=>{
+      const tbody=btn.closest(".cost-wrap").querySelector(".cost-table tbody");
+      const tr=document.createElement("tr"); tr.className="cost-row extra-row";
+      tr.innerHTML=`<td class="include-cell"><input type="checkbox" class="cost-include" checked></td>
+      <td>自訂</td><td><input type="text" class="cost-item" placeholder="自行輸入項目"></td>
+      <td><select class="cost-currency"><option>EUR</option><option>CZK</option><option>USD</option><option>TWD</option></select></td>
+      <td><input type="number" class="cost-unit" min="0" step="0.01"></td>
+      <td><input type="number" class="cost-qty" min="0" step="1" value="1"></td>
+      <td class="money cost-subtotal">€0.00</td><td><input type="text" class="cost-comment" placeholder="備註"></td>`;
+      tbody.appendChild(tr);
+      tr.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",recalc);el.addEventListener("change",recalc);});
+      recalc();
+    }));
+    document.querySelectorAll(".reset-fx").forEach(btn=>btn.addEventListener("click",()=>{
+      document.querySelectorAll(".fx-rate").forEach(x=>x.value=""); recalc();
+    }));
+    recalc();
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",bind); else bind();
+})();
+</script>
+
+</body>
+</html>
